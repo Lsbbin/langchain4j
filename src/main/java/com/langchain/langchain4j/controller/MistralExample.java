@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class MistralExample {
 
     public static void main(String[] args) throws Exception {
-        // Ollama를 사용하여 Mistral 7B 실행
+        // Ollama를 사용하여 llama3.2 실행
         OllamaChatModel model = OllamaChatModel.builder()
                 .modelName("llama3.2")  // Ollama에서 실행할 모델 이름
                 .baseUrl("http://localhost:11434") // Ollama 기본 포트
