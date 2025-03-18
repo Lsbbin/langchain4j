@@ -1,11 +1,8 @@
 package com.langchain.langchain4j.controller;
 
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
 
 import java.util.Scanner;
 
@@ -16,17 +13,17 @@ public class MistralExample {
 
     public static void main (String[] args) throws Exception {
         interface Assistant  {
-            TokenStream chat(String message);
+            String chat(String message);
         }
 
         // Ollama를 사용하여 llama3.2 실행
-        StreamingChatLanguageModel model = OllamaStreamingChatModel.builder()
+        OllamaChatModel model = OllamaChatModel.builder()
                 .baseUrl(OLLAMA_URL)
                 .modelName(MODEL_NAME)
                 .build();
 
         Assistant assistant = AiServices.builder(Assistant.class)
-                .streamingChatLanguageModel(model)
+                .chatLanguageModel(model)
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .build();
 
@@ -35,6 +32,7 @@ public class MistralExample {
         System.out.print("질문을 입력하세요 : ");
 
         while (true) {
+            System.out.print("> ");
             String question = scanner.nextLine();
 
             // "exit" 또는 "quit" 입력 시 프로그램 종료
@@ -44,19 +42,7 @@ public class MistralExample {
             }
 
             // 모델에 질문을 보내고 응답 받기
-            TokenStream tokenStream = assistant.chat(question);
-            tokenStream
-                    //.onRetrieved((List<Content> contents) -> System.out.println(contents))
-                    //.onToolExecuted((ToolExecution toolExecution) -> System.out.println(toolExecution))
-                    .onPartialResponse((String partialResponse) -> {
-                        System.out.print(partialResponse);
-                    })
-                    .onCompleteResponse((ChatResponse response) -> {
-                        System.out.println();
-                        System.out.print("> ");
-                    })
-                    .onError((Throwable error) -> error.printStackTrace())
-                    .start();
+            System.out.println(assistant.chat(question));
         }
 
         scanner.close();
