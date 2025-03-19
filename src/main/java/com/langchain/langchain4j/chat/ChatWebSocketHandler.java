@@ -101,7 +101,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         EmbeddingStoreIngestor.ingest(documents, embeddingStore);
 
-        return EmbeddingStoreContentRetriever.from(embeddingStore);
+        return EmbeddingStoreContentRetriever.builder()
+                .embeddingStore(embeddingStore)
+                .minScore(0.8)
+                .build();
     }
 
     // 문서를 안전하게 로드하는 메서드 (예외 발생 시 빈 리스트 반환)
