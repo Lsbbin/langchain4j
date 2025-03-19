@@ -43,22 +43,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         TokenStream chat(String message);
     }
 
-    // Assistant 인스턴스를 생성하는 메서드
-    private Assistant createAssistant() {
-        OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
-                .baseUrl(OLLAMA_URL)
-                .modelName(MODEL_NAME)
-                .build();
-
-        List<Document> documents = loadDocumentsSafely(DOCUMENT_PATH);
-
-        return AiServices.builder(Assistant.class)
-                .streamingChatLanguageModel(model)
-                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-                .contentRetriever(createContentRetriever(documents))
-                .build();
-    }
-
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
@@ -89,6 +73,22 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    // Assistant 인스턴스를 생성하는 메서드
+    private static Assistant createAssistant() {
+        OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
+                .baseUrl(OLLAMA_URL)
+                .modelName(MODEL_NAME)
+                .build();
+
+        List<Document> documents = loadDocumentsSafely(DOCUMENT_PATH);
+
+        return AiServices.builder(Assistant.class)
+                .streamingChatLanguageModel(model)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .contentRetriever(createContentRetriever(documents))
+                .build();
     }
 
     // 문서 전처리 후 저장
