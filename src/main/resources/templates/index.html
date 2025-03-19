@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link th:href="@{/css/index.css}" rel="stylesheet">
+</head>
+
+<body>
+    <!--<div style="width: 1200px;">
+        <div class="wrap" id="chat" style="margin-top: 50px;">
+            <h1>WebSocket Streaming Chat</h1>
+            <div id="chatBox" style="width: 1030px;"></div>
+            <div class="box">
+                <input type="text" id="userInput" placeholder="입력하세요" class="question-area" style="width: 900px;">
+                <button class="btn" name="send">전 송</button>
+            </div>
+        </div>
+    </div>-->
+    <div class="chat-container">
+        <h2>WebSocket Streaming Chat</h2>
+        <div id="chatBox" class="chat-box"></div>
+        <div class="input-box">
+            <input type="text" id="userInput" placeholder="메시지를 입력하세요">
+            <button name="send">전송</button>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript" th:src="@{/js/index.js}"></script>
