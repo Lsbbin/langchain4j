@@ -103,7 +103,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
-                .minScore(0.8)
+                .minScore(0.9)
                 .build();
     }
 
