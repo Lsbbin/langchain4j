@@ -46,6 +46,24 @@ $(function() {
                 };
             },
 
+            saveFile : function() {
+                let content = $('textarea#fileContent').val();
+
+                $.ajax({
+                    url: '/saveFile',
+                    method: 'POST',
+                    data: {
+                        'content': content
+                    },
+                    success: function(d) {
+                        alert('저장되었습니다.');
+                    },
+                    error: function(e) {
+                        console.log(e);
+                    }
+                });
+            },
+
             addMessage : function(text) {
                 const chatBox = $('div#chatBox');
                 const messageDiv = $("<div>").addClass("message").addClass('user');
@@ -73,6 +91,10 @@ $(function() {
         event: function() {
             $('button[name=send]').on('click', function(e) {
                 indexJs.f.send();
+            });
+
+            $('button[name=saveFile]').on('click', function(e) {
+                indexJs.f.saveFile();
             });
 
             $("input").on('keyup',function(e){

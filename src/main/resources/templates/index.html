@@ -20,7 +20,9 @@
     </div>
     <div class="file-str">
         <h2>File Content</h2>
-        <pre th:text="${fileStr}"></pre>
+        <textarea id="fileContent" th:text="${fileStr}" rows="10" cols="50"></textarea>
+        <br>
+        <button name="saveFile" class="save-btn">저장</button>
     </div>
 </div>
 </body>
