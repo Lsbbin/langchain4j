@@ -9,17 +9,8 @@
 </head>
 
 <body>
-    <!--<div style="width: 1200px;">
-        <div class="wrap" id="chat" style="margin-top: 50px;">
-            <h1>WebSocket Streaming Chat</h1>
-            <div id="chatBox" style="width: 1030px;"></div>
-            <div class="box">
-                <input type="text" id="userInput" placeholder="입력하세요" class="question-area" style="width: 900px;">
-                <button class="btn" name="send">전 송</button>
-            </div>
-        </div>
-    </div>-->
-    <div class="chat-container">
+<div class="chat-container">
+    <div class="chat-section">
         <h2>WebSocket Streaming Chat</h2>
         <div id="chatBox" class="chat-box"></div>
         <div class="input-box">
@@ -27,6 +18,11 @@
             <button name="send">전송</button>
         </div>
     </div>
+    <div class="file-str">
+        <h2>File Content</h2>
+        <pre th:text="${fileStr}"></pre>
+    </div>
+</div>
 </body>
-
 <script type="text/javascript" th:src="@{/js/index.js}"></script>
+</html>
