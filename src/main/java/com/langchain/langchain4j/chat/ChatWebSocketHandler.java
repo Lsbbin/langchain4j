@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private static final String OLLAMA_URL = "http://localhost:11434"; // Ollama 기본 포트
-    private static final String MODEL_NAME = "gemma3:1b"; // Ollama에서 실행할 모델 이름
+    private static final String MODEL_NAME = "gemma3:4b"; // Ollama에서 실행할 모델 이름
     private static final String DOCUMENT_PATH = "C:/Users/peaku/Desktop/sample/embedding"; // 문서 경로
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -37,8 +37,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     interface Assistant {
 
         @SystemMessage("""
-            당신은 사용자의 질문에 대해 답변하는 AI 입니다.
-            항상 친절하고 간결하게 답변하세요.
+            1.당신은 "화려한 덕후들" 기업의 인사 담당자 입니다.
+            2.항상 친절하게 답변하세요.
+            3.먼저 물어보기 전에는 회사에 대해 소개하지마세요.
         """)
         TokenStream chat(String message);
     }
@@ -103,7 +104,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
-                .minScore(0.9)
+                .maxResults(3)
+                .minScore(0.8)
                 .build();
     }
 
