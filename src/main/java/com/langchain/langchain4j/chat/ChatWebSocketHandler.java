@@ -23,7 +23,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -117,11 +116,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         Metadata metadata = new Metadata();
         Document memberDocument = Document.from(membersContent, metadata);
-
-        List<Document> updatedDocuments = new ArrayList<>(documents);
-
-        // DB에서 가져온 데이터를 추가
-        updatedDocuments.add(memberDocument);
 
         EmbeddingStoreIngestor.ingest(Collections.singletonList(memberDocument), embeddingStore);
 
