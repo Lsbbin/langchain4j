@@ -23,6 +23,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +42,17 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, Assistant> assistantMap = new ConcurrentHashMap<>();
+    private final List<Document> documents;
+    private final InMemoryEmbeddingStore<TextSegment> embeddingStore;
+
+    public ChatWebSocketHandler() {
+        // 문서 로드 및 벡터 스토어 초기화
+        this.documents = loadDocumentsSafely(DOCUMENT_PATH);
+        this.embeddingStore = new InMemoryEmbeddingStore<>();
+        EmbeddingStoreIngestor.ingest(documents, embeddingStore);
+    }
 
     interface Assistant {
-
         @SystemMessage("""
             1.당신은 "화려한 덕후들" 기업의 인사 담당자 입니다.
             2.항상 친절하게 답변하세요.
@@ -59,7 +68,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             String sessionId = jsonNode.get("sessionId").asText();
             String userMessage = jsonNode.get("message").asText();
 
-            // sessionId 기반으로 채팅 히스토리 저장
             TokenStream tokenStream = assistantMap
                     .computeIfAbsent(sessionId, k -> createAssistant()) // 세션별 Assistant 생성
                     .chat(userMessage);
@@ -91,34 +99,31 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 .modelName(MODEL_NAME)
                 .build();
 
-        List<Document> documents = loadDocumentsSafely(DOCUMENT_PATH);
-
         return AiServices.builder(Assistant.class)
                 .streamingChatLanguageModel(model)
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-                .contentRetriever(createContentRetriever(documents))
+                .contentRetriever(createContentRetriever())
                 .build();
     }
 
-    // 문서 전처리 후 저장
-    private ContentRetriever createContentRetriever(List<Document> documents) {
-        //if (documents.isEmpty()) {
-        //    return query -> Collections.emptyList();  // 문서가 없을 경우 빈 리스트 반환
-        //}
-
+    // 문서와 DB에서 가져온 회원 정보를 결합하여 ContentRetriever 생성
+    private ContentRetriever createContentRetriever() {
         List<Map> memberList = memberService.list();
 
-        // DB에서 얻은 데이터를 Document로 변환
+        // DB에서 가져온 데이터를 Document로 변환
         String membersContent = "[사원 리스트]\n\n" + memberList.stream()
                 .map(mem -> "이름: " + mem.get("NAME") + ", 이메일: " + mem.get("EMAIL") + ", 주소: " + mem.get("ADDRESS") + ", 직위: " + mem.get("POSITION"))
-                .collect(Collectors.joining("\n")); // 각 사원 정보를 줄바꿈으로 구분
+                .collect(Collectors.joining("\n"));
 
         Metadata metadata = new Metadata();
-        documents.add(Document.from(membersContent, metadata));
+        Document memberDocument = Document.from(membersContent, metadata);
 
-        InMemoryEmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
+        List<Document> updatedDocuments = new ArrayList<>(documents);
 
-        EmbeddingStoreIngestor.ingest(documents, embeddingStore);
+        // DB에서 가져온 데이터를 추가
+        updatedDocuments.add(memberDocument);
+
+        EmbeddingStoreIngestor.ingest(Collections.singletonList(memberDocument), embeddingStore);
 
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
