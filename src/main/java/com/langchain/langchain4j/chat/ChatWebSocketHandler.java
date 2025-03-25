@@ -2,7 +2,9 @@ package com.langchain.langchain4j.chat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.langchain.langchain4j.service.MemberService;
 import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -14,6 +16,7 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -22,10 +25,15 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
+
+    @Autowired
+    private MemberService memberService;
 
     private static final String OLLAMA_URL = "http://localhost:11434"; // Ollama 기본 포트
     private static final String MODEL_NAME = "gemma3:4b"; // Ollama에서 실행할 모델 이름
@@ -77,7 +85,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     // Assistant 인스턴스를 생성하는 메서드
-    private static Assistant createAssistant() {
+    private Assistant createAssistant() {
         OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
                 .baseUrl(OLLAMA_URL)
                 .modelName(MODEL_NAME)
@@ -93,10 +101,20 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     // 문서 전처리 후 저장
-    private static ContentRetriever createContentRetriever(List<Document> documents) {
-        if (documents.isEmpty()) {
-            return query -> Collections.emptyList();  // 문서가 없을 경우 빈 리스트 반환
-        }
+    private ContentRetriever createContentRetriever(List<Document> documents) {
+        //if (documents.isEmpty()) {
+        //    return query -> Collections.emptyList();  // 문서가 없을 경우 빈 리스트 반환
+        //}
+
+        List<Map> memberList = memberService.list();
+
+        // DB에서 얻은 데이터를 Document로 변환
+        String membersContent = "[사원 리스트]\n\n" + memberList.stream()
+                .map(mem -> "이름: " + mem.get("NAME") + ", 이메일: " + mem.get("EMAIL") + ", 주소: " + mem.get("ADDRESS") + ", 직위: " + mem.get("POSITION"))
+                .collect(Collectors.joining("\n")); // 각 사원 정보를 줄바꿈으로 구분
+
+        Metadata metadata = new Metadata();
+        documents.add(Document.from(membersContent, metadata));
 
         InMemoryEmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
 

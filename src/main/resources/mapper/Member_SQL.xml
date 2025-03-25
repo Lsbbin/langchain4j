@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.langchain.langchain4j.mapper.MemberMapper">
+
+    <select id="list" resultType="hashmap">
+        SELECT * FROM tb_member
+    </select>
+
+</mapper>
