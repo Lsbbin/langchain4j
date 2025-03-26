@@ -117,7 +117,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         Metadata metadata = new Metadata();
         Document memberDocument = Document.from(membersContent, metadata);
 
-        EmbeddingStoreIngestor.ingest(Collections.singletonList(memberDocument), embeddingStore);
+        EmbeddingStoreIngestor.ingest(memberDocument, embeddingStore);
 
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
