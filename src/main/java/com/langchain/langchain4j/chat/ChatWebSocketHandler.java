@@ -42,13 +42,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, Assistant> assistantMap = new ConcurrentHashMap<>();
     private final List<Document> documents;
-    private final InMemoryEmbeddingStore<TextSegment> embeddingStore;
+    private InMemoryEmbeddingStore<TextSegment> embeddingStore;
 
     public ChatWebSocketHandler() {
-        // 문서 로드 및 벡터 스토어 초기화
+        // 문서 로드
         this.documents = loadDocumentsSafely(DOCUMENT_PATH);
-        this.embeddingStore = new InMemoryEmbeddingStore<>();
-        EmbeddingStoreIngestor.ingest(documents, embeddingStore);
     }
 
     interface Assistant {
@@ -107,6 +105,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     // 문서와 DB에서 가져온 회원 정보를 결합하여 ContentRetriever 생성
     private ContentRetriever createContentRetriever() {
+        // 임베딩 스토어 초기화
+        embeddingStore = new InMemoryEmbeddingStore<>();
+
+        // 문서 적재
+        EmbeddingStoreIngestor.ingest(documents, embeddingStore);
+
         List<Map> memberList = memberService.list();
 
         // DB에서 가져온 데이터를 Document로 변환
