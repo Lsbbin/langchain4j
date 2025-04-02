@@ -16,6 +16,7 @@ import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -34,13 +35,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private OllamaStreamingChatModel ollamaStreamingChatModel;
 
     @Autowired
+    @Qualifier("chatEmbeddingStore")
     private EmbeddingStore embeddingStore;
 
     @Autowired
     private EmbeddingModel embeddingModel;
-
-    @Autowired
-    private EmbeddingStoreIngestor embeddingStoreIngestor;
 
     private static final String DOCUMENT_PATH = "C:/Users/peaku/Desktop/sample/embedding"; // 문서 경로
 
@@ -106,6 +105,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     // ContentRetriever 생성
     private ContentRetriever createContentRetriever() {
+        EmbeddingStoreIngestor embeddingStoreIngestor =  EmbeddingStoreIngestor.builder()
+                .embeddingStore(embeddingStore)
+                .embeddingModel(embeddingModel)
+                .build();
+
         embeddingStoreIngestor.ingest(documents);
 
         return EmbeddingStoreContentRetriever.builder()

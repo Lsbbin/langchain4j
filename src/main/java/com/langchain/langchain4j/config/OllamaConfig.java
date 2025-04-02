@@ -6,7 +6,6 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,11 +35,21 @@ public class OllamaConfig {
                 .build();
     }
 
-    @Bean
-    public EmbeddingStore<TextSegment> embeddingStore() {
+    @Bean(name = "reviewEmbeddingStore")
+    public EmbeddingStore<TextSegment> reviewEmbeddingStore() {
         return ChromaEmbeddingStore.builder()
                 .baseUrl("http://localhost:8000")
-                .collectionName(UUID.randomUUID().toString())
+                .collectionName("review_" + UUID.randomUUID())
+                .logRequests(true)
+                .logResponses(true)
+                .build();
+    }
+
+    @Bean(name = "chatEmbeddingStore")
+    public EmbeddingStore<TextSegment> chatEmbeddingStore() {
+        return ChromaEmbeddingStore.builder()
+                .baseUrl("http://localhost:8000")
+                .collectionName("chat_" + UUID.randomUUID())
                 .logRequests(true)
                 .logResponses(true)
                 .build();
@@ -51,14 +60,6 @@ public class OllamaConfig {
         return OllamaEmbeddingModel.builder()
                 .baseUrl(OLLAMA_URL)
                 .modelName(EMBEDDING_MODEL_NAME)
-                .build();
-    }
-
-    @Bean
-    public EmbeddingStoreIngestor embeddingStoreIngestor(EmbeddingStore<TextSegment> embeddingStore, EmbeddingModel embeddingModel) {
-        return EmbeddingStoreIngestor.builder()
-                .embeddingStore(embeddingStore)
-                .embeddingModel(embeddingModel)
                 .build();
     }
 
