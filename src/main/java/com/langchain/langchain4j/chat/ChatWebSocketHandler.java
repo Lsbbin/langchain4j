@@ -2,20 +2,19 @@ package com.langchain.langchain4j.chat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.langchain.langchain4j.service.MemberService;
 import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
-import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
-import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
@@ -25,7 +24,6 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -33,27 +31,35 @@ import java.util.stream.Collectors;
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Autowired
-    private MemberService memberService;
+    private OllamaStreamingChatModel ollamaStreamingChatModel;
 
-    private static final String OLLAMA_URL = "http://localhost:11434"; // Ollama 기본 포트
-    private static final String MODEL_NAME = "gemma3:4b"; // Ollama에서 실행할 모델 이름
+    @Autowired
+    private EmbeddingStore embeddingStore;
+
+    @Autowired
+    private EmbeddingModel embeddingModel;
+
+    @Autowired
+    private EmbeddingStoreIngestor embeddingStoreIngestor;
+
     private static final String DOCUMENT_PATH = "C:/Users/peaku/Desktop/sample/embedding"; // 문서 경로
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConcurrentHashMap<String, Assistant> assistantMap = new ConcurrentHashMap<>();
     private final List<Document> documents;
-    private InMemoryEmbeddingStore<TextSegment> embeddingStore;
 
     public ChatWebSocketHandler() {
         // 문서 로드
-        this.documents = loadDocumentsSafely(DOCUMENT_PATH);
+        List<Document> loadedDocuments = loadDocumentsSafely(DOCUMENT_PATH);
+        this.documents = loadedDocuments.stream()
+                .flatMap(doc -> DocumentSplitters.recursive(512, 50).split(doc).stream()
+                        .map(segment -> Document.from(segment.text(), doc.metadata())))
+                .collect(Collectors.toList());
     }
 
     interface Assistant {
         @SystemMessage("""
-            1.당신은 "화려한 덕후들" 기업의 인사 담당자 입니다.
-            2.항상 친절하게 답변하세요.
-            3.먼저 물어보기 전에는 회사에 대해 소개하지마세요.
+            항상 친절하고 간결하게 답변하세요.
         """)
         TokenStream chat(String message);
     }
@@ -89,42 +95,22 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    // Assistant 인스턴스를 생성하는 메서드
+    // Assistant 인스턴스 생성
     private Assistant createAssistant() {
-        OllamaStreamingChatModel model = OllamaStreamingChatModel.builder()
-                .baseUrl(OLLAMA_URL)
-                .modelName(MODEL_NAME)
-                .build();
-
         return AiServices.builder(Assistant.class)
-                .streamingChatLanguageModel(model)
+                .streamingChatLanguageModel(ollamaStreamingChatModel)
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .contentRetriever(createContentRetriever())
                 .build();
     }
 
-    // 문서와 DB에서 가져온 회원 정보를 결합하여 ContentRetriever 생성
+    // ContentRetriever 생성
     private ContentRetriever createContentRetriever() {
-        // 임베딩 스토어 초기화
-        embeddingStore = new InMemoryEmbeddingStore<>();
-
-        // 문서 적재
-        EmbeddingStoreIngestor.ingest(documents, embeddingStore);
-
-        List<Map> memberList = memberService.list();
-
-        // DB에서 가져온 데이터를 Document로 변환
-        String membersContent = "[사원 리스트]\n\n" + memberList.stream()
-                .map(mem -> "이름: " + mem.get("NAME") + ", 이메일: " + mem.get("EMAIL") + ", 주소: " + mem.get("ADDRESS") + ", 직위: " + mem.get("POSITION"))
-                .collect(Collectors.joining("\n"));
-
-        Metadata metadata = new Metadata();
-        Document memberDocument = Document.from(membersContent, metadata);
-
-        EmbeddingStoreIngestor.ingest(memberDocument, embeddingStore);
+        embeddingStoreIngestor.ingest(documents);
 
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
+                .embeddingModel(embeddingModel)
                 .maxResults(3)
                 .minScore(0.8)
                 .build();
