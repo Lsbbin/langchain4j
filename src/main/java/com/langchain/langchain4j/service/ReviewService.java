@@ -39,17 +39,22 @@ public class ReviewService {
     @Autowired
     private EmbeddingModel embeddingModel;
 
-    private static final String userInput = "키워드가 다양했으면 좋겠어요.";
+    private static final String userInput = "제품 리뷰를 종합 분석하여 요약하고 감정(긍정/부정) 및 주요 키워드를 추출해 주세요.";
 
     interface Assistant {
         @SystemMessage("""
-            1.당신은 제품 리뷰 분석과 요약을 수행하는 AI 입니다.
-            2.제품 리뷰들을 분석하고 요약하세요.
-            3.감정(긍정, 부정)을 분석하고 결과를 제공하세요.
-            4.고객들이 언급한 공통된 주제를 강조하세요.
+            1. 당신은 제품 리뷰를 분석하여 요약하고, 감정 표현이 들어간 간결한 키워드를 추출하는 AI 입니다.
+            2. 키워드는 다음 규칙을 따릅니다:
+                - 3~6개 정도의 간결한 표현
+                - 2~4글자 이내로 축약된 감정/의견 키워드
+                - 반드시 대괄호 []로 묶어 출력
+                - 문장형 표현이 아니라 형용사 또는 명사 위주의 간단한 말
+                - 광고성, 응원성, 브랜드명, 제품명이 들어간 키워드는 절대 포함하지 마세요 (예: [홈플러스 번창] 등 제외)
+            
             [답변 예시]
-            해당 제품은 "고객들은 맛에 만족하며, 전반적으로 포장이 꼼꼼해 고객 만족도가 높습니다. 하지만 질감이 질기다는 평가도 있었습니다."
-            주요 키워드는 [저렴해요], [비싸요], [배송이 빨라요]
+            요약 : 해당 제품은 배송이 빠르고 신선도가 높아 전반적으로 만족도가 높습니다. 다만 육질이 질기다는 의견도 있었습니다.
+            감정 분석 : 긍정
+            주요 키워드 : [배송 빠름], [신선함], [가성비 좋음]
         """)
         Result<String> answer(String message);
     }
@@ -64,6 +69,7 @@ public class ReviewService {
 
             resultMap.put("result", assistant.answer(userInput).content());
         } catch (Exception e) {
+            e.printStackTrace();
             resultMap.put("responseCode", "500");
         }
 
