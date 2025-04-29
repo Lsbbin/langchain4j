@@ -19,10 +19,12 @@
         </div>
     </div>
     <div class="file-str">
-        <h2>File Content</h2>
-        <textarea id="fileContent" th:text="${fileStr}" rows="10" cols="50"></textarea>
+        <h2>리뷰 요약 및 키워드 추출</h2>
+        <div class="input-box">
+            <button name="summarize">추출</button>
+        </div>
         <br>
-        <button name="saveFile" class="save-btn">저장</button>
+        <textarea id="contents" rows="10" cols="50" readonly></textarea>
     </div>
 </div>
 </body>

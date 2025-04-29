@@ -26,6 +26,19 @@ $(function() {
                 indexJs.v.socket.onerror = function(error) {
                     console.error(error);
                 };
+            },
+
+            summarize : function() {
+                $.ajax({
+                    url: '/api/review/summarize',
+                    method: 'GET',
+                    success: function(d) {
+                        $('#contents').val(d.result);
+                    },
+                    error: function(e) {
+                        console.log(e);
+                    }
+                });
             }
         },
 
@@ -44,24 +57,6 @@ $(function() {
                 indexJs.v.socket.onopen = function() {
                     indexJs.v.socket.send(JSON.stringify({sessionId: indexJs.v.sessionId, message: message}));
                 };
-            },
-
-            saveFile : function() {
-                let content = $('textarea#fileContent').val();
-
-                $.ajax({
-                    url: '/saveFile',
-                    method: 'POST',
-                    data: {
-                        'content': content
-                    },
-                    success: function(d) {
-                        alert('저장되었습니다.');
-                    },
-                    error: function(e) {
-                        console.log(e);
-                    }
-                });
             },
 
             addMessage : function(text) {
@@ -93,8 +88,8 @@ $(function() {
                 indexJs.f.send();
             });
 
-            $('button[name=saveFile]').on('click', function(e) {
-                indexJs.f.saveFile();
+            $('button[name=summarize]').on('click', function(e) {
+                indexJs.c.summarize();
             });
 
             $("input").on('keyup',function(e){
